@@ -17,9 +17,9 @@ services:
     environment:
       - WRITABLE_PATH=/data
       - MONGO_URL=mongodb://wekandb:27017/wekan
-      - ROOT_URL=$WEKAN_ROOT_URL
-      - MAIL_URL=$WEKAN_MAIL_URL
-      - MAIL_FROM=$WEKAN_MAIL_FROM
+      - ROOT_URL=${WEKAN_ROOT_URL:?}
+      - MAIL_URL=${WEKAN_MAIL_URL:?}
+      - MAIL_FROM=${WEKAN_MAIL_FROM:?}
       - WITH_API=true
       - BIGEVENTS_PATTERN=NONE
       - BROWSER_POLICY_ENABLED=true
@@ -28,3 +28,23 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./volumes/wekan_data:/data:rw
+
+  nginx:
+    image: nginx:latest
+    restart: always
+    depends_on:
+      - wekan
+    volumes:
+      - ./nginx_templates:/etc/nginx/templates
+      - ${NGINX_LOG_DIR:?}:/logs
+    environment:
+      - NGINX_ENVSUBST_TEMPLATE_SUFFIX=.nginx
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel run
+    restart: always
+    depends_on:
+      - nginx
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARED_TUNNEL_TOKEN:?}
