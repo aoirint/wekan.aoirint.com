@@ -1,0 +1,30 @@
+# Based on https://github.com/wekan/wekan/blob/13979389cabc3be9d49d5ff67a7bea32849b89bb/docker-compose.yml
+
+services:
+  wekandb:
+    image: mongo:6
+    restart: always
+    command: mongod --logpath /dev/null --oplogSize 128 --quiet
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - ./volumes/wekandb_data:/data/db:rw
+      # - ./volumes/wekandb_dump:/dump:rw
+
+  wekan:
+    image: ghcr.io/wekan/wekan:v7.01
+    restart: always
+    environment:
+      - WRITABLE_PATH=/data
+      - MONGO_URL=mongodb://wekandb:27017/wekan
+      - ROOT_URL=$WEKAN_ROOT_URL
+      - MAIL_URL=$WEKAN_MAIL_URL
+      - MAIL_FROM=$WEKAN_MAIL_FROM
+      - WITH_API=true
+      - BIGEVENTS_PATTERN=NONE
+      - BROWSER_POLICY_ENABLED=true
+    depends_on:
+      - wekandb
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./volumes/wekan_data:/data:rw
